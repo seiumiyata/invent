@@ -1,0 +1,24 @@
+{
+  "name": "InventCount - 棚卸しPWA",
+  "short_name": "InventCount",
+  "description": "棚卸し作業を効率化する在庫カウントPWAアプリ。バーコード読み取り、CSV出力、マスタ管理など現場向け機能を搭載。",
+  "start_url": "https://seiumiyata.github.io/invent/",
+  "scope": "https://seiumiyata.github.io/invent/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#007AFF",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "lang": "ja"
+}
