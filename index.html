@@ -1,1 +1,182 @@
-hello world!
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>InventCount - 棚卸しPWA</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#007AFF">
+  <link rel="icon" href="icon-192.png">
+  <style>
+    body { font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; margin:0; background:#f5f5f5;}
+    .container { max-width: 540px; margin: 20px auto; background: #fff; border-radius: 10px; box-shadow: 0 2px 10px #0001; padding: 20px;}
+    h1 { text-align: center; color: #007AFF; }
+    nav { display: flex; justify-content: space-around; margin-bottom: 20px;}
+    nav button { flex: 1; margin: 0 4px; padding: 12px 0; font-size: 16px; border-radius: 8px; border: none; background: #eee; color: #007AFF; font-weight: bold; cursor: pointer;}
+    nav button.active { background: #007AFF; color: #fff;}
+    section { display: none; }
+    section.active { display: block; }
+    .field { margin: 10px 0;}
+    label { display:block; margin-bottom:4px;}
+    input[type="number"], select, input[type="text"] { width:100%; padding:10px; font-size:18px; border-radius:6px; border:1px solid #ccc;}
+    button.primary { background:#007AFF; color:#fff; border:none; border-radius:8px; padding:12px 24px; font-size:18px; margin:8px 0; cursor:pointer;}
+    button:disabled { background:#ccc; }
+    .list { margin-top:20px;}
+    table { width:100%; border-collapse:collapse; font-size:15px;}
+    th,td { border:1px solid #eee; padding:6px; text-align:center;}
+    th { background:#f0f0f0;}
+    .actions button { font-size:14px; padding:4px 10px;}
+    #reader { margin:10px 0; border:2px solid #ddd; border-radius:8px; overflow:hidden;}
+    .hidden { display:none !important;}
+    .success { color:#28a745; font-weight:bold;}
+    .error { color:#c00; font-weight:bold;}
+    .footer { text-align:center; color:#aaa; font-size:13px; margin-top:30px;}
+    .count-info { font-size:14px; color:#555; margin-bottom:8px;}
+    .unit-btns button { margin-right:8px; }
+    .toast { position:fixed; left:50%; bottom:30px; transform:translateX(-50%); background:#333; color:#fff; padding:10px 24px; border-radius:8px; opacity:0.95; z-index:9999; font-size:16px; display:none;}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>InventCount</h1>
+    <!-- メインナビゲーション -->
+    <nav>
+      <button id="nav-register" class="active">登録</button>
+      <button id="nav-edit">修正</button>
+      <button id="nav-export">出力</button>
+      <button id="nav-delete">削除</button>
+      <button id="nav-master">マスタ取込</button>
+    </nav>
+    <!-- 登録画面 -->
+    <section id="section-register" class="active">
+      <div class="count-info" id="session-info"></div>
+      <div id="reader"></div>
+      <div class="field">
+        <label>JANコード</label>
+        <input type="text" id="jan" inputmode="numeric" pattern="[0-9]*" maxlength="13" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>数量</label>
+        <input type="number" id="qty" min="1" value="1">
+      </div>
+      <div class="field">
+        <label>単位</label>
+        <div class="unit-btns">
+          <button type="button" class="unit-btn active" data-unit="個">個</button>
+          <button type="button" class="unit-btn" data-unit="箱">箱</button>
+          <button type="button" class="unit-btn" data-unit="甲">甲</button>
+        </div>
+        <input type="hidden" id="unit" value="個">
+      </div>
+      <button id="scan-btn" type="button">カメラで読み取り</button>
+      <button id="add-btn" class="primary" type="button">登録</button>
+      <span id="register-msg"></span>
+      <div class="list">
+        <h3>登録済み一覧</h3>
+        <table id="list-table">
+          <thead>
+            <tr>
+              <th>No</th><th>JAN</th><th>数量</th><th>単位</th><th>登録日時</th><th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="list-body"></tbody>
+        </table>
+      </div>
+    </section>
+    <!-- 修正画面 -->
+    <section id="section-edit">
+      <h3>登録データ修正</h3>
+      <div class="list">
+        <table id="edit-table">
+          <thead>
+            <tr>
+              <th>No</th><th>JAN</th><th>数量</th><th>単位</th><th>登録日時</th><th>編集</th>
+            </tr>
+          </thead>
+          <tbody id="edit-body"></tbody>
+        </table>
+      </div>
+      <div id="edit-form-area" class="hidden">
+        <h4>修正内容</h4>
+        <div class="field">
+          <label>数量</label>
+          <input type="number" id="edit-qty" min="1">
+        </div>
+        <div class="field">
+          <label>単位</label>
+          <select id="edit-unit">
+            <option value="個">個</option>
+            <option value="箱">箱</option>
+            <option value="甲">甲</option>
+          </select>
+        </div>
+        <button id="edit-save-btn" class="primary">確定</button>
+        <button id="edit-cancel-btn">キャンセル</button>
+      </div>
+    </section>
+    <!-- 出力画面 -->
+    <section id="section-export">
+      <h3>データ出力</h3>
+      <div>
+        <label>出力形式</label>
+        <select id="export-type">
+          <option value="csv">CSV</option>
+        </select>
+      </div>
+      <div>
+        <label>出力後のデータ処理</label>
+        <select id="export-after">
+          <option value="keep">データを保持</option>
+          <option value="delete">データを削除</option>
+        </select>
+      </div>
+      <button id="export-btn" class="primary">出力実行</button>
+      <span id="export-msg"></span>
+    </section>
+    <!-- 削除画面 -->
+    <section id="section-delete">
+      <h3>データ削除</h3>
+      <div>
+        <label>削除方法</label>
+        <select id="delete-type">
+          <option value="all">全件削除</option>
+          <option value="select">選択削除</option>
+        </select>
+      </div>
+      <div class="list" id="delete-select-area" style="display:none;">
+        <table id="delete-table">
+          <thead>
+            <tr>
+              <th>選択</th><th>No</th><th>JAN</th><th>数量</th><th>単位</th><th>登録日時</th>
+            </tr>
+          </thead>
+          <tbody id="delete-body"></tbody>
+        </table>
+      </div>
+      <button id="delete-btn" class="primary">削除実行</button>
+      <span id="delete-msg"></span>
+    </section>
+    <!-- マスタ取込画面 -->
+    <section id="section-master">
+      <h3>商品マスタ取込</h3>
+      <div>
+        <input type="file" id="master-file" accept=".csv">
+        <div>CSVフォーマット: JANコード,商品名,単価,カテゴリ,備考</div>
+      </div>
+      <button id="master-import-btn" class="primary">取込実行</button>
+      <button id="master-cancel-btn">キャンセル</button>
+      <div id="master-result"></div>
+    </section>
+    <div class="footer">
+      &copy; 2025 InventCount<br>
+      <a href="https://seiumiyata.github.io/invent/">https://seiumiyata.github.io/invent/</a>
+    </div>
+    <div class="toast" id="toast"></div>
+  </div>
+  <audio id="audio-ok" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=" preload="auto"></audio>
+  <audio id="audio-ng" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=" preload="auto"></audio>
+  <audio id="audio-pinpon" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=" preload="auto"></audio>
+  <script src="html5-qrcode.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
