@@ -12,7 +12,6 @@
   <link rel="icon" href="icon-192.png">
   <link rel="apple-touch-icon" href="icon-192.png">
   <style>
-    /* ===== 基本スタイル ===== */
     * { box-sizing: border-box; }
     body { 
       font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; 
@@ -30,8 +29,6 @@
       position: relative;
       padding-bottom: 80px;
     }
-    
-    /* ===== ヘッダー ===== */
     .header {
       background: linear-gradient(135deg, #007AFF 0%, #0056b3 100%);
       color: white;
@@ -66,8 +63,6 @@
       width: 0%;
       transition: width 0.3s ease;
     }
-
-    /* ===== ナビゲーション ===== */
     nav { 
       display: flex; 
       background: white;
@@ -95,8 +90,6 @@
       background: #f8f9fa;
     }
     nav button:hover { background: #f8f9fa; }
-
-    /* ===== セクション ===== */
     section { 
       display: none; 
       padding: 20px;
@@ -107,8 +100,6 @@
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
     }
-
-    /* ===== フォーム要素 ===== */
     .field { 
       margin: 16px 0;
     }
@@ -127,14 +118,13 @@
       background: white;
       transition: all 0.2s ease;
       -webkit-appearance: none;
+      color: #222;
     }
     input:focus, select:focus { 
       outline: none;
       border-color: #007AFF;
       box-shadow: 0 0 0 3px rgba(0,122,255,0.1);
     }
-
-    /* ===== ボタンスタイル ===== */
     button { 
       border: none;
       border-radius: 12px;
@@ -154,8 +144,6 @@
       opacity: 0.6;
     }
     button:active { transform: scale(0.98); }
-
-    /* カメラボタン（最重要） */
     #scan-btn {
       background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
       color: white;
@@ -170,8 +158,6 @@
       box-shadow: 0 6px 20px rgba(40,167,69,0.4);
       transform: translateY(-2px);
     }
-
-    /* 登録ボタン */
     #add-btn {
       background: linear-gradient(135deg, #007AFF 0%, #0056b3 100%);
       color: white;
@@ -182,8 +168,6 @@
       width: 100%;
       box-shadow: 0 3px 12px rgba(0,122,255,0.3);
     }
-
-    /* その他のボタン */
     button.secondary {
       background: #6c757d;
       color: white;
@@ -202,8 +186,6 @@
       padding: 12px 24px;
       min-height: 48px;
     }
-
-    /* キャンセルボタン */
     #cancel-scan-btn {
       background: #dc3545;
       color: white;
@@ -212,8 +194,6 @@
       width: 100%;
       min-height: 48px;
     }
-
-    /* ===== 単位選択ボタン ===== */
     .unit-btns {
       display: flex;
       gap: 8px;
@@ -223,17 +203,16 @@
       flex: 1;
       padding: 12px;
       background: #f8f9fa;
-      color: #666;
+      color: #333;
       border: 2px solid #e1e5e9;
       min-height: 48px;
+      font-weight: bold;
     }
     .unit-btn.active {
       background: #007AFF;
       color: white;
       border-color: #007AFF;
     }
-
-    /* ===== カメラエリア ===== */
     #reader {
       margin: 16px 0;
       border: 3px solid #007AFF;
@@ -251,8 +230,6 @@
       50% { border-color: #28a745; }
       100% { border-color: #007AFF; }
     }
-
-    /* ===== 商品名表示 ===== */
     .product-name-display {
       margin-top: 12px;
       padding: 16px;
@@ -279,8 +256,6 @@
       from { opacity: 0; transform: translateY(-10px); }
       to { opacity: 1; transform: translateY(0); }
     }
-
-    /* ===== テーブル ===== */
     .table-container {
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
@@ -313,8 +288,6 @@
       min-height: 32px;
       margin: 2px;
     }
-
-    /* ===== トースト ===== */
     .toast { 
       position: fixed; 
       left: 50%; 
@@ -336,8 +309,6 @@
       from { opacity: 0; transform: translateX(-50%) translateY(20px); }
       to { opacity: 1; transform: translateX(-50%) translateY(0); }
     }
-
-    /* ===== フッター ===== */
     .footer {
       position: absolute;
       bottom: 0;
@@ -358,8 +329,6 @@
       transition: color 0.2s ease;
     }
     #version-info:hover { color: #007AFF; }
-
-    /* ===== レスポンシブ ===== */
     @media (max-width: 480px) {
       .container { padding-bottom: 60px; }
       .header { padding: 16px; }
@@ -369,8 +338,6 @@
       #scan-btn { font-size: 18px; min-height: 64px; }
       #add-btn { font-size: 16px; min-height: 56px; }
     }
-
-    /* ===== ユーティリティ ===== */
     .hidden { display: none !important; }
     .text-center { text-align: center; }
     .mt-16 { margin-top: 16px; }
@@ -379,8 +346,6 @@
       opacity: 0.6;
       pointer-events: none;
     }
-
-    /* ===== アニメーション ===== */
     .scan-success {
       animation: scanSuccess 0.5s ease-in-out;
     }
@@ -389,23 +354,52 @@
       50% { transform: scale(1.05); background: #28a745; }
       100% { transform: scale(1); }
     }
-
-    /* ===== ダークモード対応 ===== */
+    /* JAN入力欄をスキャン直後に一時ハイライト */
+    #jan.scan-success {
+      background: #fff3cd;
+      border-color: #ffc107;
+      transition: background 0.3s, border-color 0.3s;
+    }
     @media (prefers-color-scheme: dark) {
       body { background: #1a1a1a; }
       .container { background: #2d2d2d; }
       section { color: #fff; }
-      input, select { background: #3d3d3d; color: #fff; border-color: #555; }
+      label {
+        color: #fff !important;
+        font-weight: bold;
+        letter-spacing: 0.03em;
+        text-shadow: 0 1px 2px #0008;
+      }
+      input[type="text"], input[type="number"], select {
+        color: #fff !important;
+        background: #222 !important;
+        border-color: #555 !important;
+        font-weight: bold;
+      }
+      .unit-btn {
+        color: #fff !important;
+        background: #333 !important;
+        border-color: #555 !important;
+      }
+      .unit-btn.active {
+        background: #007AFF !important;
+        color: #fff !important;
+        border-color: #007AFF !important;
+      }
       table { background: #2d2d2d; }
       th { background: #3d3d3d; color: #fff; }
       tr:hover { background: #3d3d3d; }
       .footer { background: #2d2d2d; border-color: #555; }
+      #jan.scan-success {
+        background: #444a2f !important;
+        border-color: #ffe066 !important;
+        color: #fff !important;
+      }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <!-- ヘッダー -->
     <div class="header">
       <h1>📦 InventCount</h1>
       <div class="session-info" id="session-info">連続登録モード中：0件登録済み</div>
@@ -413,8 +407,6 @@
         <div class="progress-fill" id="progress-fill"></div>
       </div>
     </div>
-
-    <!-- ナビゲーション -->
     <nav>
       <button id="nav-register" class="active">📱 登録</button>
       <button id="nav-edit">✏️ 修正</button>
@@ -422,27 +414,18 @@
       <button id="nav-delete">🗑️ 削除</button>
       <button id="nav-master">📋 マスタ</button>
     </nav>
-
-    <!-- 登録画面 -->
     <section id="section-register" class="active">
-      <!-- カメラエリア -->
       <div id="reader" class="hidden"></div>
       <button id="cancel-scan-btn" class="hidden">📷 スキャン停止</button>
-
-      <!-- JANコード入力 -->
       <div class="field">
         <label>🏷️ JANコード</label>
         <input type="text" id="jan" inputmode="numeric" pattern="[0-9]*" maxlength="13" autocomplete="off" placeholder="JANコードを入力またはスキャン">
         <div id="product-name" class="product-name-display"></div>
       </div>
-
-      <!-- 数量入力 -->
       <div class="field">
         <label>🔢 数量</label>
         <input type="number" id="qty" min="1" value="1" inputmode="numeric">
       </div>
-
-      <!-- 単位選択 -->
       <div class="field">
         <label>📦 単位</label>
         <div class="unit-btns">
@@ -452,12 +435,8 @@
         </div>
         <input type="hidden" id="unit" value="個">
       </div>
-
-      <!-- アクションボタン -->
       <button id="scan-btn" type="button">📷 カメラで読み取り</button>
       <button id="add-btn" type="button">✅ 登録</button>
-
-      <!-- 登録済み一覧 -->
       <div class="mt-16">
         <h3>📋 登録済み一覧</h3>
         <div class="table-container">
@@ -472,8 +451,6 @@
         </div>
       </div>
     </section>
-
-    <!-- 修正画面 -->
     <section id="section-edit">
       <h3>✏️ 登録データ修正</h3>
       <div class="table-container">
@@ -504,8 +481,6 @@
         <button id="edit-cancel-btn" class="secondary">❌ キャンセル</button>
       </div>
     </section>
-
-    <!-- 出力画面 -->
     <section id="section-export">
       <h3>📊 データ出力</h3>
       <div class="field">
@@ -523,8 +498,6 @@
       </div>
       <button id="export-btn" class="success">📥 出力実行</button>
     </section>
-
-    <!-- 削除画面 -->
     <section id="section-delete">
       <h3>🗑️ データ削除</h3>
       <div class="field">
@@ -546,8 +519,6 @@
       </div>
       <button id="delete-btn" class="danger">🗑️ 削除実行</button>
     </section>
-
-    <!-- マスタ取込画面 -->
     <section id="section-master">
       <h3>📋 商品マスタ取込</h3>
       <div class="field">
@@ -559,24 +530,16 @@
       <button id="master-cancel-btn" class="secondary">❌ キャンセル</button>
       <div id="master-result" class="mt-16"></div>
     </section>
-
-    <!-- フッター -->
     <div class="footer">
       <div id="version-info">InventCount v1.0.0</div>
       &copy; 2025 InventCount PWA<br>
       <a href="https://seiumiyata.github.io/invent/">GitHub Pages</a>
     </div>
-
-    <!-- トースト -->
     <div class="toast" id="toast"></div>
   </div>
-
-  <!-- 音声ファイル -->
   <audio id="audio-ok" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=" preload="auto"></audio>
   <audio id="audio-ng" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=" preload="auto"></audio>
   <audio id="audio-pinpon" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=" preload="auto"></audio>
-
-  <!-- JavaScript -->
   <script src="html5-qrcode.min.js"></script>
   <script src="app.js"></script>
 </body>
