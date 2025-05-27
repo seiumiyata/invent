@@ -1,24 +1,66 @@
 {
   "name": "InventCount - 棚卸しPWA",
   "short_name": "InventCount",
-  "description": "棚卸し作業を効率化する在庫カウントPWAアプリ。バーコード読み取り、CSV出力、マスタ管理など現場向け機能を搭載。",
-  "start_url": "https://seiumiyata.github.io/invent/",
+  "description": "棚卸し現場のための在庫カウントPWAアプリ。バーコード読み取り、商品マスタ連携、CSV出力、オフライン・マルチデバイス対応。",
+  "start_url": "https://seiumiyata.github.io/invent/index.html",
   "scope": "https://seiumiyata.github.io/invent/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#007AFF",
   "orientation": "portrait-primary",
+  "lang": "ja",
+  "dir": "ltr",
+  "categories": [
+    "productivity",
+    "business",
+    "utilities",
+    "inventory",
+    "barcode",
+    "warehouse"
+  ],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ],
-  "lang": "ja"
+  "screenshots": [
+    {
+      "src": "screenshot1.png",
+      "sizes": "540x960",
+      "type": "image/png",
+      "label": "登録画面（カメラ読み取り・数量入力）"
+    },
+    {
+      "src": "screenshot2.png",
+      "sizes": "540x960",
+      "type": "image/png",
+      "label": "登録済み一覧"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "新規登録",
+      "short_name": "登録",
+      "description": "すぐに在庫登録画面を開く",
+      "url": "https://seiumiyata.github.io/invent/index.html#register",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "商品マスタ取込",
+      "short_name": "マスタ",
+      "description": "商品マスタCSV取込画面へ",
+      "url": "https://seiumiyata.github.io/invent/index.html#master",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
 }
