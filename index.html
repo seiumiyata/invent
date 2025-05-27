@@ -2,102 +2,492 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
   <title>InventCount - 棚卸しPWA</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#007AFF">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="InventCount">
   <link rel="icon" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
   <style>
-    body { font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; margin:0; background:#f5f5f5;}
-    .container { max-width: 540px; margin: 20px auto; background: #fff; border-radius: 10px; box-shadow: 0 2px 10px #0001; padding: 20px;}
-    h1 { text-align: center; color: #007AFF; }
-    nav { display: flex; justify-content: space-around; margin-bottom: 20px;}
-    nav button { flex: 1; margin: 0 4px; padding: 12px 0; font-size: 16px; border-radius: 8px; border: none; background: #eee; color: #007AFF; font-weight: bold; cursor: pointer;}
-    nav button.active { background: #007AFF; color: #fff;}
-    section { display: none; }
+    /* ===== 基本スタイル ===== */
+    * { box-sizing: border-box; }
+    body { 
+      font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; 
+      margin:0; 
+      background:#f5f5f5;
+      overflow-x: hidden;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    .container { 
+      max-width: 540px; 
+      margin: 0 auto; 
+      background: #fff; 
+      min-height: 100vh;
+      position: relative;
+      padding-bottom: 80px;
+    }
+    
+    /* ===== ヘッダー ===== */
+    .header {
+      background: linear-gradient(135deg, #007AFF 0%, #0056b3 100%);
+      color: white;
+      padding: 20px;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .header h1 { 
+      margin: 0; 
+      font-size: 24px; 
+      font-weight: 600;
+    }
+    .session-info {
+      font-size: 14px;
+      margin-top: 8px;
+      opacity: 0.9;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 4px;
+      background: rgba(255,255,255,0.3);
+      border-radius: 2px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: #28a745;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    /* ===== ナビゲーション ===== */
+    nav { 
+      display: flex; 
+      background: white;
+      border-bottom: 1px solid #eee;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    nav button { 
+      flex: 1; 
+      min-width: 80px;
+      padding: 16px 8px; 
+      font-size: 14px; 
+      border: none; 
+      background: white; 
+      color: #666; 
+      font-weight: 500; 
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    nav button.active { 
+      color: #007AFF;
+      border-bottom-color: #007AFF;
+      background: #f8f9fa;
+    }
+    nav button:hover { background: #f8f9fa; }
+
+    /* ===== セクション ===== */
+    section { 
+      display: none; 
+      padding: 20px;
+      animation: fadeIn 0.3s ease;
+    }
     section.active { display: block; }
-    .field { margin: 10px 0;}
-    label { display:block; margin-bottom:4px;}
-    input[type="number"], select, input[type="text"] { width:100%; padding:10px; font-size:18px; border-radius:6px; border:1px solid #ccc;}
-    button.primary { background:#007AFF; color:#fff; border:none; border-radius:8px; padding:12px 24px; font-size:18px; margin:8px 0; cursor:pointer;}
-    button:disabled { background:#ccc; }
-    .list { margin-top:20px;}
-    table { width:100%; border-collapse:collapse; font-size:15px;}
-    th,td { border:1px solid #eee; padding:6px; text-align:center;}
-    th { background:#f0f0f0;}
-    .actions button { font-size:14px; padding:4px 10px;}
-    #reader { margin:10px 0; border:2px solid #ddd; border-radius:8px; overflow:hidden;}
-    .hidden { display:none !important;}
-    .success { color:#28a745; font-weight:bold;}
-    .error { color:#c00; font-weight:bold;}
-    .footer { text-align:center; color:#aaa; font-size:13px; margin-top:30px;}
-    .count-info { font-size:14px; color:#555; margin-bottom:8px;}
-    .unit-btns button { margin-right:8px; }
-    .toast { position:fixed; left:50%; bottom:30px; transform:translateX(-50%); background:#333; color:#fff; padding:10px 24px; border-radius:8px; opacity:0.95; z-index:9999; font-size:16px; display:none;}
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== フォーム要素 ===== */
+    .field { 
+      margin: 16px 0;
+    }
+    label { 
+      display: block; 
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: #333;
+    }
+    input[type="number"], select, input[type="text"], input[type="file"] { 
+      width: 100%; 
+      padding: 16px; 
+      font-size: 18px; 
+      border-radius: 12px; 
+      border: 2px solid #e1e5e9;
+      background: white;
+      transition: all 0.2s ease;
+      -webkit-appearance: none;
+    }
+    input:focus, select:focus { 
+      outline: none;
+      border-color: #007AFF;
+      box-shadow: 0 0 0 3px rgba(0,122,255,0.1);
+    }
+
+    /* ===== ボタンスタイル ===== */
+    button { 
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+    }
+    button:disabled { 
+      background: #ccc !important;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    button:active { transform: scale(0.98); }
+
+    /* カメラボタン（最重要） */
+    #scan-btn {
+      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+      color: white;
+      padding: 20px 32px;
+      font-size: 20px;
+      margin: 16px 0;
+      min-height: 72px;
+      width: 100%;
+      box-shadow: 0 4px 15px rgba(40,167,69,0.3);
+    }
+    #scan-btn:hover { 
+      box-shadow: 0 6px 20px rgba(40,167,69,0.4);
+      transform: translateY(-2px);
+    }
+
+    /* 登録ボタン */
+    #add-btn {
+      background: linear-gradient(135deg, #007AFF 0%, #0056b3 100%);
+      color: white;
+      padding: 16px 32px;
+      font-size: 18px;
+      margin: 12px 0;
+      min-height: 60px;
+      width: 100%;
+      box-shadow: 0 3px 12px rgba(0,122,255,0.3);
+    }
+
+    /* その他のボタン */
+    button.secondary {
+      background: #6c757d;
+      color: white;
+      padding: 12px 24px;
+      min-height: 48px;
+    }
+    button.danger {
+      background: #dc3545;
+      color: white;
+      padding: 12px 24px;
+      min-height: 48px;
+    }
+    button.success {
+      background: #28a745;
+      color: white;
+      padding: 12px 24px;
+      min-height: 48px;
+    }
+
+    /* キャンセルボタン */
+    #cancel-scan-btn {
+      background: #dc3545;
+      color: white;
+      padding: 12px 24px;
+      margin-top: 12px;
+      width: 100%;
+      min-height: 48px;
+    }
+
+    /* ===== 単位選択ボタン ===== */
+    .unit-btns {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .unit-btn {
+      flex: 1;
+      padding: 12px;
+      background: #f8f9fa;
+      color: #666;
+      border: 2px solid #e1e5e9;
+      min-height: 48px;
+    }
+    .unit-btn.active {
+      background: #007AFF;
+      color: white;
+      border-color: #007AFF;
+    }
+
+    /* ===== カメラエリア ===== */
+    #reader {
+      margin: 16px 0;
+      border: 3px solid #007AFF;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #000;
+      position: relative;
+      min-height: 300px;
+    }
+    #reader.scanning {
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { border-color: #007AFF; }
+      50% { border-color: #28a745; }
+      100% { border-color: #007AFF; }
+    }
+
+    /* ===== 商品名表示 ===== */
+    .product-name-display {
+      margin-top: 12px;
+      padding: 16px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 16px;
+      display: none;
+      animation: slideIn 0.3s ease;
+    }
+    .product-name-display.show {
+      display: block;
+    }
+    .product-name-display.success {
+      background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+      border: 2px solid #28a745;
+      color: #155724;
+    }
+    .product-name-display.error {
+      background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+      border: 2px solid #dc3545;
+      color: #721c24;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== テーブル ===== */
+    .table-container {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin: 16px 0;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    table { 
+      width: 100%; 
+      border-collapse: collapse; 
+      font-size: 14px;
+      background: white;
+    }
+    th, td { 
+      padding: 12px 8px; 
+      text-align: center;
+      border-bottom: 1px solid #eee;
+    }
+    th { 
+      background: #f8f9fa;
+      font-weight: 600;
+      color: #495057;
+      position: sticky;
+      top: 0;
+    }
+    tr:hover { background: #f8f9fa; }
+    .actions button { 
+      font-size: 12px; 
+      padding: 6px 12px;
+      min-height: 32px;
+      margin: 2px;
+    }
+
+    /* ===== トースト ===== */
+    .toast { 
+      position: fixed; 
+      left: 50%; 
+      bottom: 100px; 
+      transform: translateX(-50%); 
+      background: #333; 
+      color: #fff; 
+      padding: 16px 24px; 
+      border-radius: 12px; 
+      z-index: 9999; 
+      font-size: 16px; 
+      display: none;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      animation: toastIn 0.3s ease;
+    }
+    .toast.success { background: #28a745; }
+    .toast.error { background: #dc3545; }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+      to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+
+    /* ===== フッター ===== */
+    .footer {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      text-align: center;
+      color: #aaa;
+      font-size: 12px;
+      padding: 16px;
+      background: #f8f9fa;
+      border-top: 1px solid #eee;
+    }
+    #version-info {
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 4px;
+      cursor: pointer;
+      transition: color 0.2s ease;
+    }
+    #version-info:hover { color: #007AFF; }
+
+    /* ===== レスポンシブ ===== */
+    @media (max-width: 480px) {
+      .container { padding-bottom: 60px; }
+      .header { padding: 16px; }
+      .header h1 { font-size: 20px; }
+      section { padding: 16px; }
+      nav button { padding: 12px 6px; font-size: 12px; }
+      #scan-btn { font-size: 18px; min-height: 64px; }
+      #add-btn { font-size: 16px; min-height: 56px; }
+    }
+
+    /* ===== ユーティリティ ===== */
+    .hidden { display: none !important; }
+    .text-center { text-align: center; }
+    .mt-16 { margin-top: 16px; }
+    .mb-16 { margin-bottom: 16px; }
+    .loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    /* ===== アニメーション ===== */
+    .scan-success {
+      animation: scanSuccess 0.5s ease-in-out;
+    }
+    @keyframes scanSuccess {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); background: #28a745; }
+      100% { transform: scale(1); }
+    }
+
+    /* ===== ダークモード対応 ===== */
+    @media (prefers-color-scheme: dark) {
+      body { background: #1a1a1a; }
+      .container { background: #2d2d2d; }
+      section { color: #fff; }
+      input, select { background: #3d3d3d; color: #fff; border-color: #555; }
+      table { background: #2d2d2d; }
+      th { background: #3d3d3d; color: #fff; }
+      tr:hover { background: #3d3d3d; }
+      .footer { background: #2d2d2d; border-color: #555; }
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>InventCount</h1>
-    <!-- メインナビゲーション -->
+    <!-- ヘッダー -->
+    <div class="header">
+      <h1>📦 InventCount</h1>
+      <div class="session-info" id="session-info">連続登録モード中：0件登録済み</div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+    </div>
+
+    <!-- ナビゲーション -->
     <nav>
-      <button id="nav-register" class="active">登録</button>
-      <button id="nav-edit">修正</button>
-      <button id="nav-export">出力</button>
-      <button id="nav-delete">削除</button>
-      <button id="nav-master">マスタ取込</button>
+      <button id="nav-register" class="active">📱 登録</button>
+      <button id="nav-edit">✏️ 修正</button>
+      <button id="nav-export">📊 出力</button>
+      <button id="nav-delete">🗑️ 削除</button>
+      <button id="nav-master">📋 マスタ</button>
     </nav>
+
     <!-- 登録画面 -->
     <section id="section-register" class="active">
-      <div class="count-info" id="session-info"></div>
-      <div id="reader"></div>
+      <!-- カメラエリア -->
+      <div id="reader" class="hidden"></div>
+      <button id="cancel-scan-btn" class="hidden">📷 スキャン停止</button>
+
+      <!-- JANコード入力 -->
       <div class="field">
-        <label>JANコード</label>
-        <input type="text" id="jan" inputmode="numeric" pattern="[0-9]*" maxlength="13" autocomplete="off">
+        <label>🏷️ JANコード</label>
+        <input type="text" id="jan" inputmode="numeric" pattern="[0-9]*" maxlength="13" autocomplete="off" placeholder="JANコードを入力またはスキャン">
+        <div id="product-name" class="product-name-display"></div>
       </div>
+
+      <!-- 数量入力 -->
       <div class="field">
-        <label>数量</label>
-        <input type="number" id="qty" min="1" value="1">
+        <label>🔢 数量</label>
+        <input type="number" id="qty" min="1" value="1" inputmode="numeric">
       </div>
+
+      <!-- 単位選択 -->
       <div class="field">
-        <label>単位</label>
+        <label>📦 単位</label>
         <div class="unit-btns">
           <button type="button" class="unit-btn active" data-unit="個">個</button>
-          <button type="button" class="unit-btn" data-unit="箱">箱</button>
-          <button type="button" class="unit-btn" data-unit="甲">甲</button>
+          <button type="button" class="unit-btn" data-unit="箱">箱 (12個)</button>
+          <button type="button" class="unit-btn" data-unit="甲">甲 (48個)</button>
         </div>
         <input type="hidden" id="unit" value="個">
       </div>
-      <button id="scan-btn" type="button">カメラで読み取り</button>
-      <button id="add-btn" class="primary" type="button">登録</button>
-      <span id="register-msg"></span>
-      <div class="list">
-        <h3>登録済み一覧</h3>
-        <table id="list-table">
-          <thead>
-            <tr>
-              <th>No</th><th>JAN</th><th>数量</th><th>単位</th><th>登録日時</th><th>操作</th>
-            </tr>
-          </thead>
-          <tbody id="list-body"></tbody>
-        </table>
+
+      <!-- アクションボタン -->
+      <button id="scan-btn" type="button">📷 カメラで読み取り</button>
+      <button id="add-btn" type="button">✅ 登録</button>
+
+      <!-- 登録済み一覧 -->
+      <div class="mt-16">
+        <h3>📋 登録済み一覧</h3>
+        <div class="table-container">
+          <table id="list-table">
+            <thead>
+              <tr>
+                <th>No</th><th>JAN</th><th>商品名</th><th>数量</th><th>単位</th><th>日時</th><th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="list-body"></tbody>
+          </table>
+        </div>
       </div>
     </section>
+
     <!-- 修正画面 -->
     <section id="section-edit">
-      <h3>登録データ修正</h3>
-      <div class="list">
+      <h3>✏️ 登録データ修正</h3>
+      <div class="table-container">
         <table id="edit-table">
           <thead>
             <tr>
-              <th>No</th><th>JAN</th><th>数量</th><th>単位</th><th>登録日時</th><th>編集</th>
+              <th>No</th><th>JAN</th><th>商品名</th><th>数量</th><th>単位</th><th>日時</th><th>編集</th>
             </tr>
           </thead>
           <tbody id="edit-body"></tbody>
         </table>
       </div>
-      <div id="edit-form-area" class="hidden">
-        <h4>修正内容</h4>
+      <div id="edit-form-area" class="hidden mt-16">
+        <h4>📝 修正内容</h4>
         <div class="field">
           <label>数量</label>
           <input type="number" id="edit-qty" min="1">
@@ -106,76 +496,87 @@
           <label>単位</label>
           <select id="edit-unit">
             <option value="個">個</option>
-            <option value="箱">箱</option>
-            <option value="甲">甲</option>
+            <option value="箱">箱 (12個)</option>
+            <option value="甲">甲 (48個)</option>
           </select>
         </div>
-        <button id="edit-save-btn" class="primary">確定</button>
-        <button id="edit-cancel-btn">キャンセル</button>
+        <button id="edit-save-btn" class="success">✅ 確定</button>
+        <button id="edit-cancel-btn" class="secondary">❌ キャンセル</button>
       </div>
     </section>
+
     <!-- 出力画面 -->
     <section id="section-export">
-      <h3>データ出力</h3>
-      <div>
+      <h3>📊 データ出力</h3>
+      <div class="field">
         <label>出力形式</label>
         <select id="export-type">
-          <option value="csv">CSV</option>
+          <option value="csv">CSV形式</option>
         </select>
       </div>
-      <div>
+      <div class="field">
         <label>出力後のデータ処理</label>
         <select id="export-after">
           <option value="keep">データを保持</option>
           <option value="delete">データを削除</option>
         </select>
       </div>
-      <button id="export-btn" class="primary">出力実行</button>
-      <span id="export-msg"></span>
+      <button id="export-btn" class="success">📥 出力実行</button>
     </section>
+
     <!-- 削除画面 -->
     <section id="section-delete">
-      <h3>データ削除</h3>
-      <div>
+      <h3>🗑️ データ削除</h3>
+      <div class="field">
         <label>削除方法</label>
         <select id="delete-type">
           <option value="all">全件削除</option>
           <option value="select">選択削除</option>
         </select>
       </div>
-      <div class="list" id="delete-select-area" style="display:none;">
+      <div class="table-container hidden" id="delete-select-area">
         <table id="delete-table">
           <thead>
             <tr>
-              <th>選択</th><th>No</th><th>JAN</th><th>数量</th><th>単位</th><th>登録日時</th>
+              <th>選択</th><th>No</th><th>JAN</th><th>商品名</th><th>数量</th><th>単位</th><th>日時</th>
             </tr>
           </thead>
           <tbody id="delete-body"></tbody>
         </table>
       </div>
-      <button id="delete-btn" class="primary">削除実行</button>
-      <span id="delete-msg"></span>
+      <button id="delete-btn" class="danger">🗑️ 削除実行</button>
     </section>
+
     <!-- マスタ取込画面 -->
     <section id="section-master">
-      <h3>商品マスタ取込</h3>
-      <div>
+      <h3>📋 商品マスタ取込</h3>
+      <div class="field">
+        <label>CSVファイル選択</label>
         <input type="file" id="master-file" accept=".csv">
-        <div>CSVフォーマット: JANコード,商品名,単価,カテゴリ,備考</div>
+        <small>フォーマット: JANコード,商品名,単価,カテゴリ,備考</small>
       </div>
-      <button id="master-import-btn" class="primary">取込実行</button>
-      <button id="master-cancel-btn">キャンセル</button>
-      <div id="master-result"></div>
+      <button id="master-import-btn" class="success">📥 取込実行</button>
+      <button id="master-cancel-btn" class="secondary">❌ キャンセル</button>
+      <div id="master-result" class="mt-16"></div>
     </section>
+
+    <!-- フッター -->
     <div class="footer">
-      &copy; 2025 InventCount<br>
-      <a href="https://seiumiyata.github.io/invent/">https://seiumiyata.github.io/invent/</a>
+      <div id="version-info">InventCount v1.0.0</div>
+      &copy; 2025 InventCount PWA<br>
+      <a href="https://seiumiyata.github.io/invent/">GitHub Pages</a>
     </div>
+
+    <!-- トースト -->
     <div class="toast" id="toast"></div>
   </div>
+
+  <!-- 音声ファイル -->
   <audio id="audio-ok" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=" preload="auto"></audio>
   <audio id="audio-ng" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=" preload="auto"></audio>
   <audio id="audio-pinpon" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=" preload="auto"></audio>
+
+  <!-- JavaScript -->
   <script src="html5-qrcode.min.js"></script>
   <script src="app.js"></script>
 </body>
