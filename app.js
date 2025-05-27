@@ -190,17 +190,14 @@ function playOK() {
   audioOK.currentTime = 0; 
   audioOK.play().catch(() => {}); 
 }
-
 function playNG() { 
   audioNG.currentTime = 0; 
   audioNG.play().catch(() => {}); 
 }
-
 function playPinpon() { 
   audioPinpon.currentTime = 0; 
   audioPinpon.play().catch(() => {}); 
 }
-
 function showToast(msg, type = 'success', duration = 2000) {
   toast.textContent = msg;
   toast.className = `toast ${type}`;
@@ -209,12 +206,10 @@ function showToast(msg, type = 'success', duration = 2000) {
     toast.style.display = "none"; 
   }, duration);
 }
-
 function updateProgress() {
   const percentage = Math.min((sessionCount / 10) * 100, 100); // 10件で100%
   progressFill.style.width = `${percentage}%`;
 }
-
 function updateSessionInfo() {
   const elapsed = Math.floor((Date.now() - startTime) / 1000);
   const avgTime = sessionCount > 0 ? Math.floor(elapsed / sessionCount) : 0;
@@ -225,26 +220,15 @@ function updateSessionInfo() {
 // ====== ナビゲーション ======
 Object.keys(navs).forEach(key => {
   navs[key].onclick = () => {
-    // アクティブ状態切り替え
     Object.values(navs).forEach(btn => btn.classList.remove("active"));
     Object.values(sections).forEach(sec => sec.classList.remove("active"));
     navs[key].classList.add("active");
     sections[key].classList.add("active");
-    
-    // カメラ停止
     if (scanning) stopCamera();
-    
-    // 画面別初期化
     switch(key) {
-      case "register":
-        refreshList();
-        break;
-      case "edit":
-        refreshEdit();
-        break;
-      case "delete":
-        refreshDelete();
-        break;
+      case "register": refreshList(); break;
+      case "edit": refreshEdit(); break;
+      case "delete": refreshDelete(); break;
     }
   };
 });
@@ -280,7 +264,6 @@ qtyInput.addEventListener('focus', () => {
     qtyInput.value = "";
   }
 });
-
 qtyInput.addEventListener('input', () => {
   if (qtyInput.dataset.initial === "true" && qtyInput.value.length === 1) {
     if (qtyInput.value !== "1") {
@@ -289,7 +272,6 @@ qtyInput.addEventListener('input', () => {
     qtyInput.dataset.initial = "false";
   }
 });
-
 qtyInput.addEventListener('blur', () => {
   if (!qtyInput.value || qtyInput.value === "" || qtyInput.value === "0") {
     qtyInput.value = 1;
@@ -317,7 +299,7 @@ janInput.addEventListener('input', async () => {
   }, 300);
 });
 
-// ====== カメラ操作（JANも渡す） ======
+// ====== カメラ操作（JANも渡す＋ハイライト） ======
 function stopCamera() {
   if (qr && scanning) {
     qr.stop().then(() => {
@@ -331,48 +313,37 @@ function stopCamera() {
         clearTimeout(scanTimeout);
         scanTimeout = null;
       }
-    }).catch(() => {
-      // エラーは無視
-    });
+    }).catch(() => {});
   }
 }
 
 scanBtn.onclick = async () => {
   if (scanning) return;
-  
   try {
     readerDiv.classList.remove("hidden");
     readerDiv.classList.add("scanning");
     cancelScanBtn.classList.remove("hidden");
     scanning = true;
     scanBtn.disabled = true;
-    
     qr = new Html5Qrcode("reader");
-    
-    // 30秒タイムアウト
     scanTimeout = setTimeout(() => {
       stopCamera();
       showToast("スキャンタイムアウトしました", "error");
     }, 30000);
-    
     await qr.start(
       { facingMode: "environment" },
-      { 
-        fps: 10, 
-        qrbox: { width: 250, height: 250 },
-        aspectRatio: 1.0
-      },
+      { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
       async (decodedText) => {
         if (/^\d{8,13}$/.test(decodedText)) {
           janInput.value = decodedText;
-          
-          // 数量設定
+          // ハイライト
+          janInput.classList.add("scan-success");
+          setTimeout(() => janInput.classList.remove("scan-success"), 1000);
+          janInput.focus();
           if (!qtyInput.value || qtyInput.value === "" || qtyInput.value === "0") {
             qtyInput.value = 1;
             qtyInput.dataset.initial = "true";
           }
-          
-          // 商品マスタ照合（JANも渡す）
           const master = await getMaster(decodedText);
           if (master && master.name) {
             showProductName(master.name, true, decodedText);
@@ -383,17 +354,10 @@ scanBtn.onclick = async () => {
             playOK();
             showToast("JANコード読み取り完了", "success");
           }
-          
-          // カメラ停止
           stopCamera();
-          
-          // フォーカスを数量入力に移動
-          setTimeout(() => qtyInput.focus(), 100);
         }
       },
-      () => {
-        // エラーは無視（連続スキャンのため）
-      }
+      () => {}
     );
   } catch (error) {
     console.error('Camera error:', error);
@@ -401,13 +365,10 @@ scanBtn.onclick = async () => {
     stopCamera();
   }
 };
-
 cancelScanBtn.onclick = () => {
   stopCamera();
   showToast("スキャンを停止しました", "success");
 };
-
-// ESCキーでカメラ停止
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && scanning) {
     stopCamera();
@@ -422,17 +383,15 @@ function resetForm() {
   unitInput.value = "個";
   unitBtns.forEach(btn => btn.classList.remove("active"));
   unitBtns[0].classList.add("active");
-  showProductName("", false); // 商品名表示もクリア
+  showProductName("", false);
   janInput.focus();
 }
-
 function renderList(items) {
   listBody.innerHTML = "";
   if (items.length === 0) {
     listBody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#666;">データがありません</td></tr>';
     return;
   }
-  
   items.forEach((item, idx) => {
     const date = new Date(item.date).toLocaleString('ja-JP', {
       month: '2-digit',
@@ -442,7 +401,6 @@ function renderList(items) {
     });
     const productName = item.productName || "未登録";
     const actualQty = item.qty * UNIT_MAP[item.unit];
-    
     listBody.innerHTML += `<tr>
       <td>${idx + 1}</td>
       <td>${item.jan}</td>
@@ -456,37 +414,28 @@ function renderList(items) {
     </tr>`;
   });
 }
-
 async function refreshList() {
   const items = await getAllItems();
   renderList(items);
   updateSessionInfo();
 }
-
 addBtn.onclick = async () => {
   const jan = janInput.value.trim();
   let qty = parseInt(qtyInput.value);
   const unit = unitInput.value;
-  
-  // バリデーション
   if (!/^\d{8,13}$/.test(jan)) {
     playNG(); 
     showToast("JANコードが正しくありません", "error"); 
     janInput.focus();
     return;
   }
-  
   if (!qty || qty < 1) {
     qty = 1;
     qtyInput.value = 1;
   }
-  
   try {
-    // 商品マスタ照合
     const master = await getMaster(jan);
     const productName = master ? master.name : "";
-    
-    // データ登録
     await addItem({ 
       jan, 
       qty, 
@@ -495,26 +444,19 @@ addBtn.onclick = async () => {
       date: new Date().toISOString(),
       actualQty: qty * UNIT_MAP[unit]
     });
-    
     sessionCount++;
     playOK();
     showToast("登録しました！", "success");
-    
-    // アニメーション効果
     addBtn.classList.add("scan-success");
     setTimeout(() => addBtn.classList.remove("scan-success"), 500);
-    
     resetForm();
     refreshList();
-    
   } catch (error) {
     console.error('Registration error:', error);
     playNG();
     showToast("登録に失敗しました", "error");
   }
 };
-
-// 一覧からの削除
 listBody.onclick = async e => {
   if (e.target.classList.contains("del-btn")) {
     if (confirm("このデータを削除しますか？")) {
@@ -532,7 +474,6 @@ function renderEdit(items) {
     editBody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#666;">データがありません</td></tr>';
     return;
   }
-  
   items.forEach((item, idx) => {
     const date = new Date(item.date).toLocaleString('ja-JP', {
       month: '2-digit',
@@ -541,7 +482,6 @@ function renderEdit(items) {
       minute: '2-digit'
     });
     const productName = item.productName || "未登録";
-    
     editBody.innerHTML += `<tr>
       <td>${idx + 1}</td>
       <td>${item.jan}</td>
@@ -553,13 +493,11 @@ function renderEdit(items) {
     </tr>`;
   });
 }
-
 async function refreshEdit() {
   const items = await getAllItems();
   renderEdit(items);
   editFormArea.classList.add("hidden");
 }
-
 editBody.onclick = async e => {
   if (e.target.classList.contains("edit-btn")) {
     editTargetId = Number(e.target.dataset.id);
@@ -573,19 +511,15 @@ editBody.onclick = async e => {
     }
   }
 };
-
 editSaveBtn.onclick = async () => {
   if (!editTargetId) return;
-  
   const qty = parseInt(editQty.value);
   const unit = editUnit.value;
-  
   if (!qty || qty < 1) { 
     showToast("数量が正しくありません", "error"); 
     editQty.focus();
     return; 
   }
-  
   try {
     await updateItem(editTargetId, { 
       qty, 
@@ -601,7 +535,6 @@ editSaveBtn.onclick = async () => {
     showToast("修正に失敗しました", "error");
   }
 };
-
 editCancelBtn.onclick = () => {
   editFormArea.classList.add("hidden");
 };
@@ -614,34 +547,26 @@ exportBtn.onclick = async () => {
       showToast("出力するデータがありません", "error"); 
       return; 
     }
-    
     exportBtn.classList.add("loading");
     exportBtn.disabled = true;
-    
-    // CSVヘッダー
     let csv = ["JAN,商品名,数量,単位,実数量,登録日時"];
-    
-    // データ行
     for (const item of items) {
       let productName = item.productName;
       if (!productName) {
         const master = await getMaster(item.jan);
         productName = master ? master.name : "未登録";
       }
-      
       const actualQty = item.qty * UNIT_MAP[item.unit];
       const date = new Date(item.date).toLocaleString('ja-JP');
       csv.push([
         item.jan, 
-        `"${productName}"`, // CSV用にクォート
+        `"${productName}"`,
         item.qty, 
         item.unit, 
         actualQty, 
         `"${date}"`
       ].join(","));
     }
-    
-    // ファイルダウンロード
     const blob = new Blob([csv.join("\r\n")], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -651,10 +576,7 @@ exportBtn.onclick = async () => {
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
-    
     showToast("CSV出力しました", "success");
-    
-    // 出力後のデータ処理
     if (exportAfter.value === "delete") {
       if (confirm("出力後にデータを削除しますか？")) {
         await clearItems();
@@ -665,7 +587,6 @@ exportBtn.onclick = async () => {
         showToast("データを削除しました", "success");
       }
     }
-    
   } catch (error) {
     console.error('Export error:', error);
     showToast("出力に失敗しました", "error");
@@ -684,14 +605,12 @@ deleteType.onchange = () => {
     deleteSelectArea.classList.add("hidden");
   }
 };
-
 function renderDelete(items) {
   deleteBody.innerHTML = "";
   if (items.length === 0) {
     deleteBody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#666;">データがありません</td></tr>';
     return;
   }
-  
   items.forEach((item, idx) => {
     const date = new Date(item.date).toLocaleString('ja-JP', {
       month: '2-digit',
@@ -700,7 +619,6 @@ function renderDelete(items) {
       minute: '2-digit'
     });
     const productName = item.productName || "未登録";
-    
     deleteBody.innerHTML += `<tr>
       <td><input type="checkbox" class="del-check" data-id="${item.id}"></td>
       <td>${idx + 1}</td>
@@ -712,12 +630,10 @@ function renderDelete(items) {
     </tr>`;
   });
 }
-
 async function refreshDelete() {
   const items = await getAllItems();
   renderDelete(items);
 }
-
 deleteBtn.onclick = async () => {
   try {
     if (deleteType.value === "all") {
@@ -735,7 +651,6 @@ deleteBtn.onclick = async () => {
         showToast("削除するデータを選択してください", "error"); 
         return; 
       }
-      
       if (confirm(`選択した${checks.length}件のデータを削除しますか？`)) {
         const ids = Array.from(checks).map(c => Number(c.dataset.id));
         await deleteItems(ids);
@@ -758,32 +673,25 @@ masterImportBtn.onclick = async () => {
     showToast("CSVファイルを選択してください", "error"); 
     return; 
   }
-  
   try {
     masterImportBtn.classList.add("loading");
     masterImportBtn.disabled = true;
-    
     const reader = new FileReader();
     reader.onload = async e => {
       try {
         const lines = e.target.result.split(/\r?\n/).filter(l => l.trim());
-        
-        // ヘッダー行判定
         let start = 0;
         if (/jan|商品名|単価|カテゴリ|備考/i.test(lines[0])) {
           start = 1;
         }
-        
         const list = [];
         let errorCount = 0;
-        
         for (let i = start; i < lines.length; i++) {
           const cols = lines[i].split(",");
           if (cols.length >= 2) {
             const [jan, name, price, category, note] = cols.map(col => 
               col.replace(/^"|"$/g, '').trim()
             );
-            
             if (jan && /^\d{8,13}$/.test(jan)) {
               list.push({ 
                 jan, 
@@ -797,7 +705,6 @@ masterImportBtn.onclick = async () => {
             }
           }
         }
-        
         const count = await importMaster(list);
         masterResult.innerHTML = `
           <div style="color:#28a745;font-weight:bold;">
@@ -806,7 +713,6 @@ masterImportBtn.onclick = async () => {
           </div>
         `;
         showToast("マスタ取込完了", "success");
-        
       } catch (error) {
         console.error('Import error:', error);
         masterResult.innerHTML = `<div style="color:#dc3545;">❌ 取込に失敗しました</div>`;
@@ -816,9 +722,7 @@ masterImportBtn.onclick = async () => {
         masterImportBtn.disabled = false;
       }
     };
-    
     reader.readAsText(file, "utf-8");
-    
   } catch (error) {
     console.error('File read error:', error);
     showToast("ファイルの読み込みに失敗しました", "error");
@@ -826,7 +730,6 @@ masterImportBtn.onclick = async () => {
     masterImportBtn.disabled = false;
   }
 };
-
 masterCancelBtn.onclick = () => {
   masterFile.value = "";
   masterResult.innerHTML = "";
@@ -836,7 +739,6 @@ masterCancelBtn.onclick = () => {
 function showVersionInfo() {
   return `InventCount v${APP_VERSION} (${BUILD_DATE})`;
 }
-
 function getSystemInfo() {
   return {
     appVersion: APP_VERSION,
@@ -851,10 +753,8 @@ function getSystemInfo() {
     cameraSupported: 'mediaDevices' in navigator
   };
 }
-
 function checkForUpdates() {
   if (!('serviceWorker' in navigator)) return;
-  
   navigator.serviceWorker.getRegistration()
     .then(registration => {
       if (registration.waiting) {
@@ -875,13 +775,9 @@ function checkForUpdates() {
       }
     });
 }
-
-// バージョン情報クリック
 versionInfo.onclick = () => {
   checkForUpdates();
 };
-
-// バージョン情報長押し（デバッグ）
 let pressTimer;
 versionInfo.onmousedown = versionInfo.ontouchstart = () => {
   pressTimer = setTimeout(() => {
@@ -897,16 +793,9 @@ versionInfo.onmouseup = versionInfo.ontouchend = () => {
 // ====== 初期化 ======
 window.onload = async () => {
   try {
-    // データベース初期化
     await openDB();
-    
-    // 画面初期化
     refreshList();
-    
-    // バージョン情報表示
     versionInfo.textContent = showVersionInfo();
-    
-    // PWA: ServiceWorker登録
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js')
         .then(registration => {
@@ -916,33 +805,23 @@ window.onload = async () => {
           console.log('ServiceWorker registration failed:', error);
         });
     }
-    
-    // オンライン/オフライン状態監視
     window.addEventListener('online', () => {
       showToast("オンラインに復帰しました", "success");
     });
-    
     window.addEventListener('offline', () => {
       showToast("オフラインモードです", "error", 3000);
     });
-    
-    // 初期フォーカス
     janInput.focus();
-    
     console.log('InventCount PWA initialized successfully');
-    
   } catch (error) {
     console.error('Initialization error:', error);
     showToast("アプリの初期化に失敗しました", "error");
   }
 };
-
-// ====== エラーハンドリング ======
 window.addEventListener('error', (event) => {
   console.error('Global error:', event.error);
   showToast("予期しないエラーが発生しました", "error");
 });
-
 window.addEventListener('unhandledrejection', (event) => {
   console.error('Unhandled promise rejection:', event.reason);
   showToast("処理中にエラーが発生しました", "error");
