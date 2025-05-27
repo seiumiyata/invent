@@ -258,11 +258,16 @@ unitBtns.forEach(btn => {
   };
 });
 
-// ====== 商品名表示 ======
-function showProductName(name, isFound = true) {
-  if (name) {
-    productNameDiv.textContent = isFound ? `✅ ${name}` : `❌ 商品マスタ未登録`;
-    productNameDiv.className = isFound ? "product-name-display show success" : "product-name-display show error";
+// ====== 商品名表示（JANも常に表示） ======
+function showProductName(name, isFound = true, jan = "") {
+  if (jan) {
+    if (isFound && name) {
+      productNameDiv.innerHTML = `JAN: <b>${jan}</b><br>✅ ${name}`;
+      productNameDiv.className = "product-name-display show success";
+    } else {
+      productNameDiv.innerHTML = `JAN: <b>${jan}</b><br>❌ 商品マスタ未登録`;
+      productNameDiv.className = "product-name-display show error";
+    }
   } else {
     productNameDiv.className = "product-name-display";
     productNameDiv.textContent = "";
@@ -292,7 +297,7 @@ qtyInput.addEventListener('blur', () => {
   }
 });
 
-// ====== JANコード入力時のリアルタイム検索 ======
+// ====== JANコード入力時のリアルタイム検索（JANも渡す） ======
 let searchTimeout;
 janInput.addEventListener('input', async () => {
   clearTimeout(searchTimeout);
@@ -301,10 +306,10 @@ janInput.addEventListener('input', async () => {
     if (/^\d{8,13}$/.test(jan)) {
       const master = await getMaster(jan);
       if (master && master.name) {
-        showProductName(master.name, true);
+        showProductName(master.name, true, jan);
         playPinpon();
       } else {
-        showProductName("商品マスタ未登録", false);
+        showProductName("商品マスタ未登録", false, jan);
       }
     } else {
       showProductName("", false);
@@ -312,7 +317,7 @@ janInput.addEventListener('input', async () => {
   }, 300);
 });
 
-// ====== カメラ操作 ======
+// ====== カメラ操作（JANも渡す） ======
 function stopCamera() {
   if (qr && scanning) {
     qr.stop().then(() => {
@@ -367,14 +372,14 @@ scanBtn.onclick = async () => {
             qtyInput.dataset.initial = "true";
           }
           
-          // 商品マスタ照合
+          // 商品マスタ照合（JANも渡す）
           const master = await getMaster(decodedText);
           if (master && master.name) {
-            showProductName(master.name, true);
+            showProductName(master.name, true, decodedText);
             playPinpon();
             showToast(`商品名：${master.name}`, "success");
           } else {
-            showProductName("商品マスタ未登録", false);
+            showProductName("商品マスタ未登録", false, decodedText);
             playOK();
             showToast("JANコード読み取り完了", "success");
           }
@@ -417,7 +422,7 @@ function resetForm() {
   unitInput.value = "個";
   unitBtns.forEach(btn => btn.classList.remove("active"));
   unitBtns[0].classList.add("active");
-  showProductName("", false);
+  showProductName("", false); // 商品名表示もクリア
   janInput.focus();
 }
 
