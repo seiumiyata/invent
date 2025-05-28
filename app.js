@@ -214,6 +214,8 @@ addBtn.onclick = async () => {
 let html5Qr = null;
 scanBtn.onclick = () => {
   cameraModal.classList.remove("hidden");
+  // モーダル内のreader-modalを一度クリア
+  readerModal.innerHTML = "";
   if (!html5Qr) {
     html5Qr = new Html5Qrcode("reader-modal");
   }
