@@ -45,13 +45,9 @@
     button.secondary { background: #6c757d; color: white; padding: 12px 24px; min-height: 48px;}
     button.danger { background: #dc3545; color: white; padding: 12px 24px; min-height: 48px;}
     button.success { background: #28a745; color: white; padding: 12px 24px; min-height: 48px;}
-    #cancel-scan-btn { background: #dc3545; color: white; padding: 12px 24px; margin-top: 8px; width: 100%; min-height: 48px;}
     .unit-btns { display: flex; gap: 8px; margin-top: 8px;}
     .unit-btn { flex: 1; padding: 12px; background: #f8f9fa; color: #333; border: 2px solid #e1e5e9; min-height: 48px; font-weight: bold;}
     .unit-btn.active { background: #007AFF; color: white; border-color: #007AFF;}
-    #reader { margin: 8px 0; border: 3px solid #007AFF; border-radius: 16px; overflow: hidden; background: #000; position: relative; min-height: 300px;}
-    #reader.scanning { animation: pulse 2s infinite;}
-    @keyframes pulse { 0% { border-color: #007AFF; } 50% { border-color: #28a745; } 100% { border-color: #007AFF; } }
     .product-name-display { margin-top: 12px; padding: 16px; border-radius: 12px; font-weight: 600; font-size: 16px; display: none; animation: slideIn 0.3s ease;}
     .product-name-display.show { display: block;}
     .product-name-display.success { background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); border: 2px solid #28a745; color: #155724;}
@@ -79,19 +75,37 @@
     .scan-success { animation: scanSuccess 0.5s ease-in-out;}
     @keyframes scanSuccess { 0% { transform: scale(1); } 50% { transform: scale(1.05); background: #28a745; } 100% { transform: scale(1); } }
     #jan.scan-success { background: #fff3cd; border-color: #ffc107; transition: background 0.3s, border-color 0.3s;}
-    @media (prefers-color-scheme: dark) {
-      body { background: #1a1a1a; }
-      .container { background: #2d2d2d; }
-      section { color: #fff; }
-      label { color: #fff !important; font-weight: bold; letter-spacing: 0.03em; text-shadow: 0 1px 2px #0008; }
-      input[type="text"], input[type="number"], select { color: #fff !important; background: #222 !important; border-color: #555 !important; font-weight: bold; }
-      .unit-btn { color: #fff !important; background: #333 !important; border-color: #555 !important; }
-      .unit-btn.active { background: #007AFF !important; color: #fff !important; border-color: #007AFF !important; }
-      table { background: #2d2d2d; }
-      th { background: #3d3d3d; color: #fff; }
-      tr:hover { background: #3d3d3d; }
-      .footer { background: #2d2d2d; border-color: #555; }
-      #jan.scan-success { background: #444a2f !important; border-color: #ffe066 !important; color: #fff !important; }
+    /* カメラモーダル用 */
+    .camera-modal {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #reader-modal {
+      width: 90vw;
+      max-width: 400px;
+      height: 60vw;
+      max-height: 400px;
+      background: #000;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .cancel-modal-btn {
+      margin-top: 16px;
+      background: #dc3545;
+      color: #fff;
+      font-size: 18px;
+      padding: 12px 32px;
+      border-radius: 12px;
+      border: none;
+    }
+    @media (max-width: 480px) {
+      #reader-modal { width: 98vw; height: 60vw; max-width: 99vw; max-height: 70vw; }
     }
   </style>
 </head>
@@ -117,10 +131,8 @@
         <input type="text" id="jan" inputmode="numeric" pattern="[0-9]*" maxlength="13" autocomplete="off" placeholder="JANコードを入力またはスキャン">
         <div id="product-name" class="product-name-display"></div>
       </div>
-      <!-- カメラで読み取りボタンとカメラ画面をJAN入力直下に -->
+      <!-- カメラで読み取りボタン -->
       <button id="scan-btn" type="button">📷 カメラで読み取り</button>
-      <div id="reader" class="hidden"></div>
-      <button id="cancel-scan-btn" class="hidden">📷 スキャン停止</button>
       <div class="field">
         <label>🔢 数量</label>
         <input type="number" id="qty" min="1" value="1" inputmode="numeric">
@@ -236,6 +248,11 @@
       <span style="font-size:10px; color:#bbb;">Author: t.miyata</span>
     </div>
     <div class="toast" id="toast"></div>
+  </div>
+  <!-- カメラモーダル -->
+  <div id="camera-modal" class="camera-modal hidden">
+    <div id="reader-modal"></div>
+    <button id="cancel-scan-modal-btn" class="cancel-modal-btn">📷 スキャン停止</button>
   </div>
   <audio id="audio-ok" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=" preload="auto"></audio>
   <audio id="audio-ng" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=" preload="auto"></audio>
