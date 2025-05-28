@@ -302,7 +302,7 @@ cameraModal.onclick = (e) => {
   if (e.target === cameraModal) stopCamera();
 };
 
-// 一覧表示（修正ボタンを非表示に修正）
+// 一覧表示（登録済み一覧には修正ボタンを絶対に出さない）
 async function refreshList() {
   const items = await getAllItems();
   listBody.innerHTML = "";
