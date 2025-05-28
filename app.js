@@ -143,6 +143,10 @@ const cancelScanModalBtn = document.getElementById("cancel-scan-modal-btn");
 // 商品マスタ（JAN→商品名）
 let productMaster = {};
 
+// カメラ関連変数
+let html5Qr = null;
+let isScanning = false;
+
 // ナビ切替
 Object.keys(navs).forEach(key => {
   navs[key].onclick = () => {
@@ -207,36 +211,97 @@ addBtn.onclick = async () => {
   unitBtns[0].classList.add("active");
   unitHidden.value = "個";
   productNameDiv.textContent = "";
+  productNameDiv.className = "product-name-display";
   refreshList();
 };
 
-// カメラ読み取り（モーダル）
-let html5Qr = null;
-scanBtn.onclick = () => {
-  cameraModal.classList.remove("hidden");
-  // モーダル内のreader-modalを一度クリア
-  readerModal.innerHTML = "";
-  if (!html5Qr) {
+// カメラ読み取り（修正版）
+scanBtn.onclick = async () => {
+  if (isScanning) return;
+  
+  try {
+    // カメラモーダルを表示
+    cameraModal.classList.remove("hidden");
+    isScanning = true;
+    
+    // 既存のインスタンスがあれば停止
+    if (html5Qr) {
+      try {
+        await html5Qr.stop();
+        html5Qr.clear();
+      } catch (e) {
+        console.log("Previous scanner stop:", e);
+      }
+    }
+    
+    // モーダル内のreader-modalを一度クリア
+    readerModal.innerHTML = "";
+    
+    // 新しいインスタンスを作成
     html5Qr = new Html5Qrcode("reader-modal");
+    
+    // カメラ設定
+    const config = {
+      fps: 10,
+      qrbox: { width: 250, height: 250 },
+      aspectRatio: 1.0
+    };
+    
+    // カメラ開始
+    await html5Qr.start(
+      { facingMode: "environment" },
+      config,
+      (decodedText, decodedResult) => {
+        // 読み取り成功
+        janInput.value = decodedText;
+        janInput.dispatchEvent(new Event('input'));
+        janInput.classList.add('scan-success');
+        setTimeout(() => janInput.classList.remove('scan-success'), 500);
+        
+        // カメラ停止とモーダル閉じる
+        stopCamera();
+        showToast("バーコードを読み取りました", "success");
+      },
+      (errorMessage) => {
+        // エラーは無視（継続的にスキャン）
+      }
+    );
+    
+  } catch (err) {
+    console.error("Camera start error:", err);
+    showToast("カメラの起動に失敗しました", "error");
+    stopCamera();
   }
-  html5Qr.start(
-    { facingMode: "environment" },
-    { fps: 10, qrbox: 250 },
-    code => {
-      janInput.value = code;
-      janInput.dispatchEvent(new Event('input'));
-      html5Qr.stop();
-      cameraModal.classList.add("hidden");
-    },
-    error => { }
-  ).catch(() => {
-    showToast("カメラ起動失敗", "error");
-    cameraModal.classList.add("hidden");
-  });
 };
-cancelScanModalBtn.onclick = () => {
-  if (html5Qr) html5Qr.stop();
+
+// カメラ停止とモーダル閉じる関数
+async function stopCamera() {
+  isScanning = false;
+  
+  if (html5Qr) {
+    try {
+      await html5Qr.stop();
+      html5Qr.clear();
+    } catch (e) {
+      console.log("Camera stop error:", e);
+    }
+    html5Qr = null;
+  }
+  
   cameraModal.classList.add("hidden");
+  readerModal.innerHTML = "";
+}
+
+// キャンセルボタン
+cancelScanModalBtn.onclick = () => {
+  stopCamera();
+};
+
+// モーダル背景クリックで閉じる
+cameraModal.onclick = (e) => {
+  if (e.target === cameraModal) {
+    stopCamera();
+  }
 };
 
 // 一覧表示
@@ -313,6 +378,10 @@ async function refreshEdit() {
     editBody.appendChild(tr);
   });
   editFormArea.classList.add("hidden");
+}
+
+async function refreshExport() {
+  // 出力画面の更新処理
 }
 
 // 削除
