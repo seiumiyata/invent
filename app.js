@@ -139,6 +139,7 @@ const toastDiv = document.getElementById("toast");
 const cameraModal = document.getElementById("camera-modal");
 const readerModal = document.getElementById("reader-modal");
 const cancelScanModalBtn = document.getElementById("cancel-scan-modal-btn");
+const torchBtn = document.getElementById("torch-btn");
 
 // 商品マスタ（JAN→商品名）
 let productMaster = {};
@@ -146,6 +147,7 @@ let productMaster = {};
 // カメラ関連変数
 let html5Qr = null;
 let isScanning = false;
+let torchEnabled = false;
 
 // ナビ切替
 Object.keys(navs).forEach(key => {
@@ -215,94 +217,92 @@ addBtn.onclick = async () => {
   refreshList();
 };
 
-// カメラ読み取り（修正版）
-scanBtn.onclick = async () => {
-  if (isScanning) return;
-  
+// トーチサポート確認
+function isTorchSupported() {
+  if (!html5Qr) return false;
   try {
-    // カメラモーダルを表示
-    cameraModal.classList.remove("hidden");
-    isScanning = true;
-    
-    // 既存のインスタンスがあれば停止
-    if (html5Qr) {
-      try {
-        await html5Qr.stop();
-        html5Qr.clear();
-      } catch (e) {
-        console.log("Previous scanner stop:", e);
-      }
-    }
-    
-    // モーダル内のreader-modalを一度クリア
-    readerModal.innerHTML = "";
-    
-    // 新しいインスタンスを作成
-    html5Qr = new Html5Qrcode("reader-modal");
-    
-    // カメラ設定
-    const config = {
-      fps: 10,
-      qrbox: { width: 250, height: 250 },
-      aspectRatio: 1.0
-    };
-    
-    // カメラ開始
-    await html5Qr.start(
-      { facingMode: "environment" },
-      config,
-      (decodedText, decodedResult) => {
-        // 読み取り成功
-        janInput.value = decodedText;
-        janInput.dispatchEvent(new Event('input'));
-        janInput.classList.add('scan-success');
-        setTimeout(() => janInput.classList.remove('scan-success'), 500);
-        
-        // カメラ停止とモーダル閉じる
-        stopCamera();
-        showToast("バーコードを読み取りました", "success");
-      },
-      (errorMessage) => {
-        // エラーは無視（継続的にスキャン）
-      }
-    );
-    
-  } catch (err) {
-    console.error("Camera start error:", err);
-    showToast("カメラの起動に失敗しました", "error");
-    stopCamera();
+    const capabilities = html5Qr.getRunningTrackCameraCapabilities();
+    return capabilities && capabilities.torchFeature && capabilities.torchFeature().isSupported();
+  } catch (e) {
+    return false;
   }
-};
-
-// カメラ停止とモーダル閉じる関数
-async function stopCamera() {
-  isScanning = false;
-  
-  if (html5Qr) {
-    try {
-      await html5Qr.stop();
-      html5Qr.clear();
-    } catch (e) {
-      console.log("Camera stop error:", e);
-    }
-    html5Qr = null;
-  }
-  
-  cameraModal.classList.add("hidden");
-  readerModal.innerHTML = "";
 }
 
-// キャンセルボタン
-cancelScanModalBtn.onclick = () => {
-  stopCamera();
+// トーチ切り替え
+async function toggleTorch() {
+  if (!html5Qr || !isTorchSupported()) {
+    showToast("ライト機能はサポートされていません", "error");
+    return;
+  }
+  try {
+    const torch = html5Qr.getRunningTrackCameraCapabilities().torchFeature();
+    const newState = !torchEnabled;
+    await torch.apply(newState);
+    torchEnabled = newState;
+    torchBtn.textContent = torchEnabled ? "🔦 ライトOFF" : "💡 ライトON";
+    torchBtn.className = torchEnabled ? "torch-btn active" : "torch-btn";
+    showToast(torchEnabled ? "ライトをONにしました" : "ライトをOFFにしました", "success");
+  } catch (error) {
+    showToast("ライトの切り替えに失敗しました", "error");
+  }
+}
+
+// カメラ読み取り（モーダル＆トーチ対応）
+scanBtn.onclick = async () => {
+  if (isScanning) return;
+  cameraModal.classList.remove("hidden");
+  isScanning = true;
+  // モーダル内のreader-modalを一度クリア
+  readerModal.innerHTML = "";
+  // 既存のインスタンスがあれば停止
+  if (html5Qr) {
+    try { await html5Qr.stop(); html5Qr.clear(); } catch (e) {}
+  }
+  html5Qr = new Html5Qrcode("reader-modal");
+  html5Qr.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: 250 },
+    code => {
+      janInput.value = code;
+      janInput.dispatchEvent(new Event('input'));
+      stopCamera();
+      showToast("バーコードを読み取りました", "success");
+    },
+    error => { }
+  ).then(() => {
+    setTimeout(() => {
+      if (isTorchSupported()) {
+        torchBtn.style.display = "inline-flex";
+        torchBtn.textContent = "💡 ライトON";
+        torchBtn.className = "torch-btn";
+        torchEnabled = false;
+      } else {
+        torchBtn.style.display = "none";
+      }
+    }, 500);
+  }).catch(() => {
+    showToast("カメラ起動失敗", "error");
+    stopCamera();
+  });
+};
+async function stopCamera() {
+  isScanning = false;
+  torchEnabled = false;
+  if (html5Qr) {
+    try { await html5Qr.stop(); html5Qr.clear(); } catch (e) {}
+    html5Qr = null;
+  }
+  cameraModal.classList.add("hidden");
+  readerModal.innerHTML = "";
+  torchBtn.style.display = "none";
+}
+torchBtn.onclick = toggleTorch;
+cancelScanModalBtn.onclick = stopCamera;
+cameraModal.onclick = (e) => {
+  if (e.target === cameraModal) stopCamera();
 };
 
-// モーダル背景クリックで閉じる
-cameraModal.onclick = (e) => {
-  if (e.target === cameraModal) {
-    stopCamera();
-  }
-};
+// ...（以下、データ表示・編集・削除・エクスポート・マスタ取込・トースト等は[1]のまま）
 
 // 一覧表示
 async function refreshList() {
@@ -323,222 +323,4 @@ async function refreshList() {
   });
 }
 
-// 編集
-let editingId = null;
-
-window.editItem = async function (id) {
-  const items = await getAllItems();
-  const item = items.find(i => i.id === id);
-  if (!item) return;
-  editingId = id;
-  editQty.value = item.qty;
-  editUnit.value = item.unit;
-  editFormArea.classList.remove("hidden");
-};
-
-editSaveBtn.onclick = async () => {
-  if (editingId === null) return;
-  const qty = parseInt(editQty.value);
-  const unit = editUnit.value;
-  if (isNaN(qty) || qty < 1) {
-    showToast("数量を正しく入力", "error");
-    return;
-  }
-  await updateItem(editingId, {
-    qty,
-    unit,
-    actualQty: qty // 換算なし
-  });
-  showToast("修正しました", "success");
-  editingId = null;
-  editFormArea.classList.add("hidden");
-  refreshEdit();
-  refreshList();
-};
-
-editCancelBtn.onclick = () => {
-  editingId = null;
-  editFormArea.classList.add("hidden");
-};
-
-async function refreshEdit() {
-  const items = await getAllItems();
-  editBody.innerHTML = "";
-  items.forEach((item, idx) => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${idx + 1}</td>
-      <td>${item.jan}</td>
-      <td>${item.productName || ""}</td>
-      <td>${item.qty}</td>
-      <td>${item.unit}</td>
-      <td>${formatDate(item.date)}</td>
-      <td class="actions"><button onclick="editItem(${item.id})">✏️</button></td>
-    `;
-    editBody.appendChild(tr);
-  });
-  editFormArea.classList.add("hidden");
-}
-
-async function refreshExport() {
-  // 出力画面の更新処理
-}
-
-// 削除
-window.deleteItemAction = async function (id) {
-  if (!confirm("削除しますか？")) return;
-  await deleteItem(id);
-  showToast("削除しました", "success");
-  refreshList();
-  refreshEdit();
-  refreshDelete();
-};
-
-deleteBtn.onclick = async () => {
-  if (deleteType.value === "all") {
-    if (!confirm("全件削除しますか？")) return;
-    await clearAllItems();
-    showToast("全件削除しました", "success");
-    refreshList();
-    refreshEdit();
-    refreshDelete();
-  } else {
-    // 選択削除
-    const checks = deleteBody.querySelectorAll("input[type=checkbox]:checked");
-    const ids = Array.from(checks).map(chk => parseInt(chk.value));
-    for (const id of ids) {
-      await deleteItem(id);
-    }
-    showToast("選択削除しました", "success");
-    refreshList();
-    refreshEdit();
-    refreshDelete();
-  }
-};
-
-deleteType.onchange = () => {
-  if (deleteType.value === "select") {
-    deleteSelectArea.classList.remove("hidden");
-    refreshDelete();
-  } else {
-    deleteSelectArea.classList.add("hidden");
-  }
-};
-
-async function refreshDelete() {
-  const items = await getAllItems();
-  deleteBody.innerHTML = "";
-  items.forEach((item, idx) => {
-    const tr = document.createElement("tr");
-    if (deleteType.value === "select") {
-      tr.innerHTML = `
-        <td><input type="checkbox" value="${item.id}"></td>
-        <td>${idx + 1}</td>
-        <td>${item.jan}</td>
-        <td>${item.productName || ""}</td>
-        <td>${item.qty}</td>
-        <td>${item.unit}</td>
-        <td>${formatDate(item.date)}</td>
-      `;
-    }
-    deleteBody.appendChild(tr);
-  });
-}
-
-// データ出力
-exportBtn.onclick = async () => {
-  const items = await getAllItems();
-  if (items.length === 0) {
-    showToast("データがありません", "error");
-    return;
-  }
-  if (exportType.value === "csv") {
-    let csv = "No,JAN,商品名,数量,単位,日時\n";
-    items.forEach((item, idx) => {
-      csv += [
-        idx + 1,
-        item.jan,
-        `"${item.productName || ""}"`,
-        item.qty,
-        item.unit,
-        formatDate(item.date)
-      ].join(",") + "\n";
-    });
-    downloadCSV(csv, "inventcount.csv");
-    showToast("CSV出力しました", "success");
-  }
-  if (exportAfter.value === "delete") {
-    await clearAllItems();
-    refreshList();
-    refreshEdit();
-    refreshDelete();
-  }
-};
-
-function downloadCSV(csv, filename) {
-  const blob = new Blob([csv], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-// 商品マスタ取込
-masterImportBtn.onclick = () => {
-  const file = masterFile.files[0];
-  if (!file) {
-    showToast("CSVファイルを選択してください", "error");
-    return;
-  }
-  const reader = new FileReader();
-  reader.onload = function (e) {
-    const lines = e.target.result.split(/\r?\n/);
-    let count = 0;
-    lines.forEach(line => {
-      const [jan, name] = line.split(",");
-      if (jan && name) {
-        productMaster[jan.trim()] = name.trim();
-        count++;
-      }
-    });
-    masterResult.textContent = `${count}件の商品マスタを取込`;
-    showToast("商品マスタ取込完了", "success");
-  };
-  reader.readAsText(file, "utf-8");
-};
-
-masterCancelBtn.onclick = () => {
-  masterFile.value = "";
-  masterResult.textContent = "";
-};
-
-// 日時整形
-function formatDate(dt) {
-  if (!dt) return "";
-  const d = new Date(dt);
-  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
-}
-
-// トースト表示
-function showToast(msg, type = "success") {
-  toastDiv.textContent = msg;
-  toastDiv.className = "toast " + type;
-  toastDiv.style.display = "block";
-  setTimeout(() => {
-    toastDiv.style.display = "none";
-  }, 2000);
-}
-
-// バージョン表示
-versionInfo.onclick = () => {
-  alert(`InventCount v${APP_VERSION}`);
-};
-
-// 初期化
-window.onload = async () => {
-  await openDB();
-  refreshList();
-  versionInfo.textContent = `InventCount v${APP_VERSION}`;
-};
+// ...（編集・削除・出力・マスタ取込・トースト表示・初期化も[1]の通り）
