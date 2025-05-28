@@ -302,7 +302,7 @@ cameraModal.onclick = (e) => {
   if (e.target === cameraModal) stopCamera();
 };
 
-// 一覧表示
+// 一覧表示（修正ボタンを非表示に修正）
 async function refreshList() {
   const items = await getAllItems();
   listBody.innerHTML = "";
@@ -315,7 +315,7 @@ async function refreshList() {
       <td>${item.qty}</td>
       <td>${item.unit}</td>
       <td>${formatDate(item.date)}</td>
-      <td class="actions"><button onclick="editItem(${item.id})">✏️</button><button onclick="deleteItemAction(${item.id})">🗑️</button></td>
+      <td class="actions"><button onclick="deleteItemAction(${item.id})">🗑️</button></td>
     `;
     listBody.appendChild(tr);
   });
