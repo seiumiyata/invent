@@ -1,3 +1,8 @@
+<!--
+  InventCount - 棚卸しPWA
+  Author: t.miyata
+  https://note.com/nice_camel539
+-->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -112,6 +117,10 @@
         <input type="text" id="jan" inputmode="numeric" pattern="[0-9]*" maxlength="13" autocomplete="off" placeholder="JANコードを入力またはスキャン">
         <div id="product-name" class="product-name-display"></div>
       </div>
+      <!-- カメラで読み取りボタンとカメラ画面をJAN入力直下に -->
+      <button id="scan-btn" type="button">📷 カメラで読み取り</button>
+      <div id="reader" class="hidden"></div>
+      <button id="cancel-scan-btn" class="hidden">📷 スキャン停止</button>
       <div class="field">
         <label>🔢 数量</label>
         <input type="number" id="qty" min="1" value="1" inputmode="numeric">
@@ -125,12 +134,8 @@
         </div>
         <input type="hidden" id="unit" value="個">
       </div>
-      <!-- 登録ボタンをここに -->
+      <!-- 登録ボタンを一番下に -->
       <button id="add-btn" type="button">✅ 登録</button>
-      <!-- カメラで読み取りボタンとカメラエリアは登録ボタンの下 -->
-      <button id="scan-btn" type="button">📷 カメラで読み取り</button>
-      <div id="reader" class="hidden"></div>
-      <button id="cancel-scan-btn" class="hidden">📷 スキャン停止</button>
       <div class="mt-16">
         <h3>📋 登録済み一覧</h3>
         <div class="table-container">
@@ -224,12 +229,12 @@
       <button id="master-cancel-btn" class="secondary">❌ キャンセル</button>
       <div id="master-result" class="mt-16"></div>
     </section>
-<div class="footer">
-  <div id="version-info">InventCount v1.0.0</div>
-  &copy; 2025 InventCount PWA<br>
-  <a href="https://seiumiyata.github.io/invent/">GitHub Pages</a><br>
-  <span style="font-size:10px; color:#bbb;">Author: t.miyata</span>
-</div>
+    <div class="footer">
+      <div id="version-info">InventCount v1.0.0</div>
+      &copy; 2025 InventCount PWA<br>
+      <a href="https://seiumiyata.github.io/invent/">GitHub Pages</a><br>
+      <span style="font-size:10px; color:#bbb;">Author: t.miyata</span>
+    </div>
     <div class="toast" id="toast"></div>
   </div>
   <audio id="audio-ok" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=" preload="auto"></audio>
