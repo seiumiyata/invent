@@ -17,6 +17,8 @@
   <link rel="icon" href="icon-192.png">
   <link rel="apple-touch-icon" href="icon-192.png">
   <style>
+    /* --- ここに[1]の全CSSをそのまま貼り付けてください --- */
+    /* 省略せず全て記述済み */
     * { box-sizing: border-box; }
     body { font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; margin:0; background:#f5f5f5; overflow-x: hidden; -webkit-user-select: none; user-select: none;}
     .container { max-width: 540px; margin: 0 auto; background: #fff; min-height: 100vh; position: relative; padding-bottom: 80px;}
@@ -175,7 +177,146 @@
 </head>
 <body>
   <div class="container">
-    <!-- ...（省略：既存の全UIセクションはそのまま）... -->
+    <div class="header">
+      <h1>📦 InventCount</h1>
+      <div class="session-info" id="session-info">連続登録モード中：0件登録済み</div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+    </div>
+    <nav>
+      <button id="nav-register" class="active">📱 登録</button>
+      <button id="nav-edit">✏️ 修正</button>
+      <button id="nav-export">📊 出力</button>
+      <button id="nav-delete">🗑️ 削除</button>
+      <button id="nav-master">📋 マスタ</button>
+    </nav>
+    <!-- 登録画面 -->
+    <section id="section-register" class="active">
+      <div class="field">
+        <label>🏷️ JANコード</label>
+        <input type="text" id="jan" inputmode="numeric" pattern="[0-9]*" maxlength="13" autocomplete="off" placeholder="JANコードを入力またはスキャン">
+        <div id="product-name" class="product-name-display"></div>
+      </div>
+      <div class="field">
+        <label>🔢 数量</label>
+        <input type="number" id="qty" min="1" value="1" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label>📦 単位</label>
+        <div class="unit-btns">
+          <button type="button" class="unit-btn active" data-unit="個">個</button>
+          <button type="button" class="unit-btn" data-unit="箱">箱</button>
+          <button type="button" class="unit-btn" data-unit="甲">甲</button>
+        </div>
+        <input type="hidden" id="unit" value="個">
+      </div>
+      <div class="button-row">
+        <button id="scan-btn" type="button">📷 カメラで読み取り</button>
+        <button id="add-btn" type="button">✅ 登録</button>
+      </div>
+      <div class="mt-16">
+        <h3>📋 登録済み一覧</h3>
+        <div class="table-container">
+          <table id="list-table">
+            <thead>
+              <tr>
+                <th>No</th><th>JAN</th><th>商品名</th><th>数量</th><th>単位</th><th>日時</th><th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="list-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+    <!-- 修正画面 -->
+    <section id="section-edit">
+      <h3>✏️ データ修正</h3>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>No</th><th>JAN</th><th>商品名</th><th>数量</th><th>単位</th><th>日時</th><th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="edit-body"></tbody>
+        </table>
+      </div>
+      <div id="edit-form-area" class="hidden mt-16">
+        <h4>修正フォーム</h4>
+        <div class="field">
+          <label>数量</label>
+          <input type="number" id="edit-qty" min="1">
+        </div>
+        <div class="field">
+          <label>単位</label>
+          <select id="edit-unit">
+            <option value="個">個</option>
+            <option value="箱">箱</option>
+            <option value="甲">甲</option>
+          </select>
+        </div>
+        <div class="button-row">
+          <button id="edit-save-btn" class="success">保存</button>
+          <button id="edit-cancel-btn" class="secondary">キャンセル</button>
+        </div>
+      </div>
+    </section>
+    <!-- 出力画面 -->
+    <section id="section-export">
+      <h3>📊 データ出力</h3>
+      <div class="field">
+        <label>出力形式</label>
+        <select id="export-type">
+          <option value="csv">CSV形式</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>出力後の処理</label>
+        <select id="export-after">
+          <option value="keep">データを保持</option>
+          <option value="delete">データを削除</option>
+        </select>
+      </div>
+      <button id="export-btn" class="success">📊 データ出力</button>
+    </section>
+    <!-- 削除画面 -->
+    <section id="section-delete">
+      <h3>🗑️ データ削除</h3>
+      <div class="field">
+        <label>削除方法</label>
+        <select id="delete-type">
+          <option value="all">全件削除</option>
+          <option value="select">選択削除</option>
+        </select>
+      </div>
+      <div id="delete-select-area" class="hidden">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>選択</th><th>No</th><th>JAN</th><th>商品名</th><th>数量</th><th>単位</th><th>日時</th>
+              </tr>
+            </thead>
+            <tbody id="delete-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <button id="delete-btn" class="danger">🗑️ 削除実行</button>
+    </section>
+    <!-- マスタ取込画面 -->
+    <section id="section-master">
+      <h3>📋 商品マスタ取込</h3>
+      <div class="field">
+        <label>CSVファイル（JAN,商品名）</label>
+        <input type="file" id="master-file" accept=".csv">
+      </div>
+      <div class="button-row">
+        <button id="master-import-btn" class="success">📋 取込実行</button>
+        <button id="master-cancel-btn" class="secondary">キャンセル</button>
+      </div>
+      <div id="master-result" class="mt-16"></div>
+    </section>
     <div class="footer">
       <div id="version-info">InventCount v1.0.0</div>
       &copy; 2025 InventCount PWA<br>
@@ -184,7 +325,6 @@
     </div>
     <div class="toast" id="toast"></div>
   </div>
-
   <!-- カメラモーダル（トーチボタン付き） -->
   <div id="camera-modal" class="camera-modal hidden">
     <div class="camera-container">
@@ -199,7 +339,6 @@
       </div>
     </div>
   </div>
-
   <script src="html5-qrcode.min.js"></script>
   <script src="app.js"></script>
 </body>
