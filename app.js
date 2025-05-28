@@ -113,6 +113,8 @@ const unitBtns = document.querySelectorAll(".unit-btn");
 const unitHidden = document.getElementById("unit");
 const addBtn = document.getElementById("add-btn");
 const scanBtn = document.getElementById("scan-btn");
+const readerDiv = document.getElementById("reader");
+const cancelScanBtn = document.getElementById("cancel-scan-btn");
 const listBody = document.getElementById("list-body");
 const productNameDiv = document.getElementById("product-name");
 const editBody = document.getElementById("edit-body");
@@ -134,11 +136,6 @@ const masterCancelBtn = document.getElementById("master-cancel-btn");
 const masterResult = document.getElementById("master-result");
 const versionInfo = document.getElementById("version-info");
 const toastDiv = document.getElementById("toast");
-
-// カメラモーダル
-const cameraModal = document.getElementById("camera-modal");
-const readerModal = document.getElementById("reader-modal");
-const cancelScanModalBtn = document.getElementById("cancel-scan-modal-btn");
 
 // 商品マスタ（JAN→商品名）
 let productMaster = {};
@@ -210,12 +207,14 @@ addBtn.onclick = async () => {
   refreshList();
 };
 
-// カメラ読み取り（モーダル）
+// カメラ読み取り
 let html5Qr = null;
 scanBtn.onclick = () => {
-  cameraModal.classList.remove("hidden");
+  scanBtn.disabled = true;
+  readerDiv.classList.remove("hidden");
+  cancelScanBtn.classList.remove("hidden");
   if (!html5Qr) {
-    html5Qr = new Html5Qrcode("reader-modal");
+    html5Qr = new Html5Qrcode("reader");
   }
   html5Qr.start(
     { facingMode: "environment" },
@@ -224,17 +223,23 @@ scanBtn.onclick = () => {
       janInput.value = code;
       janInput.dispatchEvent(new Event('input'));
       html5Qr.stop();
-      cameraModal.classList.add("hidden");
+      readerDiv.classList.add("hidden");
+      cancelScanBtn.classList.add("hidden");
+      scanBtn.disabled = false;
     },
     error => { }
   ).catch(() => {
     showToast("カメラ起動失敗", "error");
-    cameraModal.classList.add("hidden");
+    readerDiv.classList.add("hidden");
+    cancelScanBtn.classList.add("hidden");
+    scanBtn.disabled = false;
   });
 };
-cancelScanModalBtn.onclick = () => {
+cancelScanBtn.onclick = () => {
   if (html5Qr) html5Qr.stop();
-  cameraModal.classList.add("hidden");
+  readerDiv.classList.add("hidden");
+  cancelScanBtn.classList.add("hidden");
+  scanBtn.disabled = false;
 };
 
 // 一覧表示
