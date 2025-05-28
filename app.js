@@ -1,6 +1,8 @@
-// ===========================
-// InventCount PWA app.js
-// ===========================
+/*
+  InventCount - 棚卸しPWA
+  Author: t.miyata
+  https://note.com/nice_camel539
+*/
 
 const APP_VERSION = '1.0.0';
 const DB_NAME = 'inventcount-db';
