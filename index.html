@@ -87,37 +87,89 @@
       min-height: 56px;
       font-size: 18px;
     }
-    /* カメラモーダル */
+    /* カメラモーダル修正版 */
     .camera-modal {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.85);
+      background: rgba(0,0,0,0.9);
       z-index: 9999;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      padding: 20px;
+    }
+    .camera-container {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      max-width: 90vw;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .camera-header {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .camera-header h3 {
+      margin: 0 0 8px 0;
+      color: #333;
+      font-size: 18px;
+    }
+    .camera-header p {
+      margin: 0;
+      color: #666;
+      font-size: 14px;
     }
     #reader-modal {
-      width: 90vw;
-      max-width: 400px;
-      height: 60vw;
-      max-height: 400px;
-      background: #000;
-      border-radius: 16px;
+      width: 300px;
+      height: 300px;
+      border-radius: 12px;
       overflow: hidden;
+      background: #000;
+      margin: 16px 0;
+    }
+    .camera-controls {
+      margin-top: 16px;
     }
     .cancel-modal-btn {
-      margin-top: 16px;
       background: #dc3545;
       color: #fff;
-      font-size: 18px;
-      padding: 12px 32px;
+      font-size: 16px;
+      padding: 12px 24px;
       border-radius: 12px;
       border: none;
+      cursor: pointer;
+      font-weight: 600;
     }
+    .cancel-modal-btn:hover {
+      background: #c82333;
+    }
+    /* レスポンシブ対応 */
     @media (max-width: 480px) {
-      #reader-modal { width: 98vw; height: 60vw; max-width: 99vw; max-height: 70vw; }
+      .camera-container {
+        max-width: 95vw;
+        padding: 16px;
+      }
+      #reader-modal {
+        width: 280px;
+        height: 280px;
+      }
+      .camera-header h3 {
+        font-size: 16px;
+      }
+      .cancel-modal-btn {
+        font-size: 14px;
+        padding: 10px 20px;
+      }
+    }
+    @media (max-width: 360px) {
+      #reader-modal {
+        width: 250px;
+        height: 250px;
+      }
     }
   </style>
 </head>
@@ -137,6 +189,7 @@
       <button id="nav-delete">🗑️ 削除</button>
       <button id="nav-master">📋 マスタ</button>
     </nav>
+    
     <section id="section-register" class="active">
       <div class="field">
         <label>🏷️ JANコード</label>
@@ -174,7 +227,95 @@
         </div>
       </div>
     </section>
-    <!-- ...他のセクションは省略（前回と同じ）... -->
+
+    <section id="section-edit">
+      <h3>✏️ データ修正</h3>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>No</th><th>JAN</th><th>商品名</th><th>数量</th><th>単位</th><th>日時</th><th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="edit-body"></tbody>
+        </table>
+      </div>
+      <div id="edit-form-area" class="hidden mt-16">
+        <h4>修正フォーム</h4>
+        <div class="field">
+          <label>数量</label>
+          <input type="number" id="edit-qty" min="1">
+        </div>
+        <div class="field">
+          <label>単位</label>
+          <select id="edit-unit">
+            <option value="個">個</option>
+            <option value="箱">箱</option>
+            <option value="甲">甲</option>
+          </select>
+        </div>
+        <div class="button-row">
+          <button id="edit-save-btn" class="success">保存</button>
+          <button id="edit-cancel-btn" class="secondary">キャンセル</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="section-export">
+      <h3>📊 データ出力</h3>
+      <div class="field">
+        <label>出力形式</label>
+        <select id="export-type">
+          <option value="csv">CSV形式</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>出力後の処理</label>
+        <select id="export-after">
+          <option value="keep">データを保持</option>
+          <option value="delete">データを削除</option>
+        </select>
+      </div>
+      <button id="export-btn" class="success">📊 データ出力</button>
+    </section>
+
+    <section id="section-delete">
+      <h3>🗑️ データ削除</h3>
+      <div class="field">
+        <label>削除方法</label>
+        <select id="delete-type">
+          <option value="all">全件削除</option>
+          <option value="select">選択削除</option>
+        </select>
+      </div>
+      <div id="delete-select-area" class="hidden">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>選択</th><th>No</th><th>JAN</th><th>商品名</th><th>数量</th><th>単位</th><th>日時</th>
+              </tr>
+            </thead>
+            <tbody id="delete-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <button id="delete-btn" class="danger">🗑️ 削除実行</button>
+    </section>
+
+    <section id="section-master">
+      <h3>📋 商品マスタ取込</h3>
+      <div class="field">
+        <label>CSVファイル（JAN,商品名）</label>
+        <input type="file" id="master-file" accept=".csv">
+      </div>
+      <div class="button-row">
+        <button id="master-import-btn" class="success">📋 取込実行</button>
+        <button id="master-cancel-btn" class="secondary">キャンセル</button>
+      </div>
+      <div id="master-result" class="mt-16"></div>
+    </section>
+
     <div class="footer">
       <div id="version-info">InventCount v1.0.0</div>
       &copy; 2025 InventCount PWA<br>
@@ -183,14 +324,21 @@
     </div>
     <div class="toast" id="toast"></div>
   </div>
-  <!-- カメラモーダル（body直下に必ず配置） -->
+
+  <!-- カメラモーダル（修正版） -->
   <div id="camera-modal" class="camera-modal hidden">
-    <div id="reader-modal"></div>
-    <button id="cancel-scan-modal-btn" class="cancel-modal-btn">📷 スキャン停止</button>
+    <div class="camera-container">
+      <div class="camera-header">
+        <h3>📷 バーコードをスキャン</h3>
+        <p>バーコードをカメラに向けてください</p>
+      </div>
+      <div id="reader-modal"></div>
+      <div class="camera-controls">
+        <button id="cancel-scan-modal-btn" class="cancel-modal-btn">❌ キャンセル</button>
+      </div>
+    </div>
   </div>
-  <audio id="audio-ok" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=" preload="auto"></audio>
-  <audio id="audio-ng" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=" preload="auto"></audio>
-  <audio id="audio-pinpon" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=" preload="auto"></audio>
+
   <script src="html5-qrcode.min.js"></script>
   <script src="app.js"></script>
 </body>
