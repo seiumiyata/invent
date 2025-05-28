@@ -2,13 +2,12 @@
 // InventCount PWA app.js
 // ===========================
 
-// 定数
 const APP_VERSION = '1.0.0';
 const DB_NAME = 'inventcount-db';
 const DB_STORE = 'inventory';
 const DB_VER = 1;
 
-// 単位換算なし（すべて1）
+// 単位換算なし
 const UNIT_MAP = { "個": 1, "箱": 1, "甲": 1 };
 
 // IndexedDB操作
@@ -111,6 +110,9 @@ const qtyInput = document.getElementById("qty");
 const unitBtns = document.querySelectorAll(".unit-btn");
 const unitHidden = document.getElementById("unit");
 const addBtn = document.getElementById("add-btn");
+const scanBtn = document.getElementById("scan-btn");
+const readerDiv = document.getElementById("reader");
+const cancelScanBtn = document.getElementById("cancel-scan-btn");
 const listBody = document.getElementById("list-body");
 const productNameDiv = document.getElementById("product-name");
 const editBody = document.getElementById("edit-body");
@@ -201,6 +203,41 @@ addBtn.onclick = async () => {
   unitHidden.value = "個";
   productNameDiv.textContent = "";
   refreshList();
+};
+
+// カメラ読み取り
+let html5Qr = null;
+scanBtn.onclick = () => {
+  scanBtn.disabled = true;
+  readerDiv.classList.remove("hidden");
+  cancelScanBtn.classList.remove("hidden");
+  if (!html5Qr) {
+    html5Qr = new Html5Qrcode("reader");
+  }
+  html5Qr.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: 250 },
+    code => {
+      janInput.value = code;
+      janInput.dispatchEvent(new Event('input'));
+      html5Qr.stop();
+      readerDiv.classList.add("hidden");
+      cancelScanBtn.classList.add("hidden");
+      scanBtn.disabled = false;
+    },
+    error => { }
+  ).catch(() => {
+    showToast("カメラ起動失敗", "error");
+    readerDiv.classList.add("hidden");
+    cancelScanBtn.classList.add("hidden");
+    scanBtn.disabled = false;
+  });
+};
+cancelScanBtn.onclick = () => {
+  if (html5Qr) html5Qr.stop();
+  readerDiv.classList.add("hidden");
+  cancelScanBtn.classList.add("hidden");
+  scanBtn.disabled = false;
 };
 
 // 一覧表示
